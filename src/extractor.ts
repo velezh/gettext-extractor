@@ -16,6 +16,14 @@ export interface IGettextExtractorStats {
     numberOfParsedFilesWithMessages: number;
 }
 
+export interface IGettextOptions {
+    noReferencesOutput: boolean;
+}
+
+export interface IGettextExtractorOptions {
+    extractor?: Partial<IGettextOptions>;
+}
+
 export class GettextExtractor {
 
     private stats: IGettextExtractorStats = {
@@ -27,10 +35,19 @@ export class GettextExtractor {
         numberOfParsedFilesWithMessages: 0
     };
 
+    private options: IGettextOptions = {
+        noReferencesOutput: false
+    };
+
     private builder: CatalogBuilder;
 
-    constructor() {
+    constructor(options?: IGettextExtractorOptions) {
         this.builder = new CatalogBuilder(this.stats);
+        if (options && options.extractor) {
+            if (options.extractor.noReferencesOutput !== undefined) {
+                this.options.noReferencesOutput = options.extractor.noReferencesOutput;
+            }
+        }
     }
 
     public createJsParser(extractors?: IJsExtractorFunction[]): JsParser {
@@ -115,7 +132,9 @@ export class GettextExtractor {
             item.msgid = message.text as string;
             item.msgid_plural = message.textPlural as string;
             item.msgctxt = message.context as string;
-            item.references = message.references.sort((a, b) => a.localeCompare(b));
+            if (!this.options.noReferencesOutput) {
+                item.references = message.references.sort((a, b) => a.localeCompare(b));
+            }
             item.extractedComments = message.comments;
 
             return item;
